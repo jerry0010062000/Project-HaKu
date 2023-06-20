@@ -1,7 +1,6 @@
 import sys
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QProgressBar, QLabel
-from config_reader import load_config
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QProgressBar, QLabel, QFileDialog
 
 class ProgressThread(QThread):
     update_progress = pyqtSignal(int)
@@ -14,22 +13,42 @@ class ProgressThread(QThread):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("進度條示範")
+        self.setWindowTitle("Project HaKu Demo")
+
+        #self.layout為主要布局
         self.layout = QVBoxLayout()
+        self.processBar_layout = QVBoxLayout()
+        self.filePath_layout = QHBoxLayout()
+        self.filePath_layout2 = QHBoxLayout()
         
         self.progress_bar = QProgressBar()
         self.label = QLabel()
         self.start_button = QPushButton("開始")
         self.pause_button = QPushButton("暫停")
+        self.label2 = QLabel("未選擇音檔路徑")
+        self.select_button = QPushButton('選擇文件')
+        self.label3 = QLabel("未選擇金鑰路徑")
+        self.select_button2 = QPushButton('選擇金鑰')
+              
+        self.processBar_layout.addWidget(self.progress_bar)
+        self.processBar_layout.addWidget(self.start_button)
+        self.processBar_layout.addWidget(self.pause_button)
+        self.filePath_layout.addWidget(self.select_button)
+        self.filePath_layout.addWidget(self.label2)
+        self.filePath_layout2.addWidget(self.select_button2)
+        self.filePath_layout2.addWidget(self.label3)
+
+        #加入模組layout
+        #self.layout.addLayout(self.processBar_layout)
+        self.layout.addLayout(self.filePath_layout)
+        self.layout.addLayout(self.filePath_layout2)
         
-        self.layout.addWidget(self.progress_bar)
-        self.layout.addWidget(self.label)
-        self.layout.addWidget(self.start_button)
-        self.layout.addWidget(self.pause_button)
         self.setLayout(self.layout)
         
         self.start_button.clicked.connect(self.start_progress)
         self.pause_button.clicked.connect(self.pause_progress)
+        self.select_button.clicked.connect(lambda: self.get_file_path(self.label2))
+        self.select_button2.clicked.connect(lambda: self.get_file_path(self.label3))
         
         self.thread = ProgressThread()
         self.thread.update_progress.connect(self.update_progress_bar)
@@ -62,14 +81,15 @@ class MainWindow(QWidget):
         else:
             self.timer.stop()
 
-    def load_config(self, filename):
-        config = load_config(filename)
-        host = config['database']['host']
-        self.label.setText(f"Database Host: {host}")
+    def get_file_path(self, label):
+        file_path, _= QFileDialog.getOpenFileName(self, '選擇檔案')
+        if file_path:
+            label.setText(file_path)
+        else:
+            label.setText("未選擇任何檔案")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.load_config('config.json')
     window.show()
     sys.exit(app.exec_())
